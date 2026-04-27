@@ -19,9 +19,8 @@ from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier, XGBRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
 
-# ─────────────────────────────────────────────────────────────────────────────
 # 1. CORE CONFIG & LLM
-# ─────────────────────────────────────────────────────────────────────────────
+
 OPENROUTER_API_KEY = "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"
 FREE_MODELS = [
     "google/gemini-2.0-flash-exp:free",
@@ -915,7 +914,6 @@ if prompt := st.chat_input("Analyze, predict, or ask about your data..."):
         })
         st.rerun()
 
-    # ── GENERAL CHAT / SQL / WHAT-IF PREDICTION ───────────────────────────
     else:
         if st.session_state.df is None:
             reply = call_openrouter(prompt) or "I'm having trouble connecting. Please try again."
@@ -962,7 +960,6 @@ if prompt := st.chat_input("Analyze, predict, or ask about your data..."):
                 f"| Predicted **{st.session_state.target_name}** | **{final}** |\n\n💡 **What this means:** {expl}"
             )}); st.rerun()
 
-        # SQL fallback
         else:
             duckdb.register("df_table", st.session_state.df)
             sample_row = st.session_state.df.dropna().iloc[0].to_dict() if len(st.session_state.df) > 0 else {}
@@ -1023,19 +1020,7 @@ if st.session_state.active_mode == "Predict" and st.session_state.model_trained:
                     if st.session_state.df[f].dtype == 'O':
                         u_data[f] = st.selectbox(f, list(st.session_state.df[f].dropna().unique()), key=f"sel_{f}")
                     else:
-                        col_data = st.session_state.df[f]
-
-                        if pd.api.types.is_numeric_dtype(col_data):
-                            default_val = float(col_data.mean())
-                        else:
-                            col_numeric = pd.to_numeric(col_data, errors='coerce')
-                            default_val = float(col_numeric.mean()) if col_numeric.notna().any() else 0.0
-
-                        u_data[f] = st.number_input(
-                            f,
-                            value=default_val,
-                            key=f"num_{f}"
-                        )
+                        u_data[f] = st.number_input(f, value=float(st.session_state.df[f].mean()), key=f"num_{f}")
             submitted = st.form_submit_button("🚀 Run Diagnostic Prediction")
 
         if submitted:
